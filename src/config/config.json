@@ -1,0 +1,28 @@
+{
+  "API_URL": "https://astrowp-blog-demo.instawp.xyz",
+  "site": {
+    "url": "https://blog-theme-demo.astrowp.com"
+  },
+  "pages": {
+    "leftmenu": [
+      {
+        "title": "Projects",
+        "slug": "/projects/"
+      },
+      {
+        "title": "About",
+        "slug": "/about/"
+      }
+    ],
+    "rightmenu": [
+      {
+        "title": "Archive",
+        "slug": "/archive/"
+      },
+      {
+        "title": "Contact",
+        "slug": "/contact/"
+      }
+    ]
+  }
+}

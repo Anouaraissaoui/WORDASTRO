@@ -1,0 +1,141 @@
+---
+import { SEO } from "astro-seo";
+import { Schema } from "astro-seo-schema";
+import Container from "@components/container.astro";
+import Postlist from "@components/postlist.astro";
+import Pagination from "@components/pagination.astro";
+import Layout from "@layouts/Layout.astro";
+import config from "@config/config.json";
+import { getAllAuthors } from "@utils/get-all-authors";
+
+let response = await fetch(`${config.API_URL}/graphql`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    query: `
+        query GetPosts {
+          posts(first: 100) {
+            nodes {
+              slug
+              title
+              excerpt
+              date
+              isSticky
+              featuredImage {
+                node {
+                  mediaItemUrl
+                }
+              }
+              author {
+                node {
+                  name
+                  slug
+                  avatar {
+                    foundAvatar
+                    url
+                  }
+                }
+              }
+              categories {
+                edges {
+                    isPrimary
+                    node {
+                        name
+                        slug
+                    }
+                }
+              }
+            }
+          }
+        }
+      `,
+  }),
+});
+const { data } = await response.json();
+
+const posts = data.posts.nodes
+  .sort((a, b) => (a.isSticky === true ? -1 : b.isSticky === true ? 1 : 0))
+  .sort(
+    (a, b) => a.isSticky && b.isSticky && new Date(b.date) - new Date(a.date),
+  );
+
+// Build a list of all authors
+const authors = await getAllAuthors(posts);
+
+// Get site data
+response = await fetch(`${config.API_URL}/graphql`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    query: `
+        query GetSiteInfo {
+          seo {
+            meta {
+              homepage {
+                title
+                description
+              }
+            }
+            openGraph {
+              frontPage {
+                title
+              }
+            }
+          }
+        }
+      `,
+  }),
+});
+
+const { data: siteData } = await response.json();
+---
+
+<Layout>
+  <Fragment slot="head">
+    
+    <SEO
+    title={`${siteData.seo.meta.homepage.title}`}
+    description={siteData.seo.meta.homepage.description}
+      canonical={Astro.url}
+      openGraph={{
+        basic: {
+          url: Astro.url,
+          type: "website",
+          title: siteData.seo.meta.homepage.title,
+          image: posts[0].author.node?.seo?.opengraphImage?.link ?? "",
+        },
+
+      }}
+      extend={{
+        meta: [
+          {
+            name: "og:description",
+            content: siteData.seo.meta.homepage.description,
+          },
+          {
+            name: "twitter:title",
+            content: siteData.seo.meta.homepage.title,
+          },
+          {
+            name: "twitter:description",
+            content: siteData.seo.meta.homepage.description,
+          },
+        ],
+      }}
+    />
+
+    </Fragment>
+
+  <Container>
+    <main>
+      <div class="mt-10 grid gap-10 md:grid-cols-2 lg:gap-10 xl:grid-cols-3">
+        {
+          posts
+            .slice(0, 13)
+            .map((post) => <Postlist post={post} authors={authors} />)
+        }
+      </div>
+      <div class="mt-10 flex justify-center"><a class="relative inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-2 pl-4 text-sm font-medium text-gray-500 hover:bg-gray-50 focus:z-20 disabled:pointer-events-none disabled:opacity-40 dark:border-gray-500 dark:bg-white dark:text-gray-500" href="/archive/"><span>View all Posts</span></a></div>
+    </main>
+  </Container>
+</Layout>

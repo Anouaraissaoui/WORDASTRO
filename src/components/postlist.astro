@@ -1,0 +1,90 @@
+---
+import cx from "classnames";
+import { Image, Picture } from "astro:assets";
+import Label from "@components/ui/label.astro";
+
+const { post, authors, aspect, preloadImage } = Astro.props;
+
+const category =
+  post.categories.edges.find((category) => category.isPrimary) ??
+  post.categories.edges[0];
+---
+
+<div
+  class={`sticky group cursor-pointer ${post.isSticky && "grid items-center col-span-full md:gap-10 md:grid-cols-2"}`}
+>
+ <div
+    class={cx(
+      "relative overflow-hidden transition-all bg-gray-100 rounded-md dark:bg-gray-800 hover:scale-105",
+      post.isSticky ? "aspect-video" : (aspect === "landscape" ? "aspect-video" : "aspect-square"),
+    )}
+  >
+    <a href={`/${post.slug}/`}>
+      <Picture
+        formats={["avif", "webp"]}
+        src={post.featuredImage
+          ? post.featuredImage.node.mediaItemUrl
+          : import("../assets/placeholder.jpg")}
+        alt={post.title}
+        widths={[200, 400, 800]}
+        sizes="(max-width: 640px) 90vw, 480px"
+        aspectRatio={aspect === "landscape" ? "16:9" : "1:1"}
+        loading={preloadImage ? "eager" : "lazy"}
+        class="h-full w-full rounded-md object-cover"
+        inferSize={true}
+      />
+    </a>
+  </div>
+
+  <div>
+    <a href={`/category/${category.node.slug}/`}
+      ><Label theme="green">{category.node.name}</Label></a
+    >
+    <h2
+      class={`text-brand-primary mt-2 font-semibold tracking-normal dark:text-white ${post.isSticky ? "text-3xl" : "text-lg"}`}
+    >
+      <a href={`/${post.slug}/`}>
+        <span
+          class="bg-gradient-to-r from-postUnderline-lightFrom to-postUnderline-lightTo bg-[length:0px_10px] bg-left-bottom bg-no-repeat transition-[background-size] duration-500 hover:bg-[length:100%_3px] group-hover:bg-[length:100%_10px] dark:from-postUnderline-darkFrom dark:to-postUnderline-darkTo"
+        >
+          {post.title}
+        </span>
+      </a>
+    </h2>
+    {post.isSticky && <p class="excerpt mt-3" set:html={post.excerpt} />}
+    <div
+      class="mt-6 flex items-center space-x-3 text-gray-600 dark:text-white"
+    >
+      <div class="flex items-center gap-3">
+        <div class="relative h-5 w-5 flex-shrink-0">
+          <Image
+            src={authors?.[post.author.node.slug]
+              ? authors[post.author.node.slug].avatar_urls["48"]
+              : import(`../assets/authors/placeholder.jpg`)}
+            alt="Author Photo"
+            width={40}
+            height={40}
+            loading="eager"
+            class="rounded-full"
+          />
+        </div>
+        <a href={`/author/${authors[post.author.node.slug].user_nicename}/`}
+          ><span class="text-sm"
+            >{authors[post.author.node.slug].display_name}</span
+          ></a
+        >
+      </div>
+      <span class="text-xs text-white dark:text-gray-600"> &bull;</span>
+
+      <time class="text-sm" datetime={post.date}>
+        {
+          new Date(post.date).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })
+        }
+      </time>
+    </div>
+  </div>
+</div>
